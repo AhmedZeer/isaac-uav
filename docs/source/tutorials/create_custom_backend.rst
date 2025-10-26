@@ -188,7 +188,7 @@ Now let's run the Python script:
 
 .. code:: bash
 
-   ISAACSIM_PYTHON examples/4_python_single_vehicle.py
+   isaac_run examples/4_python_single_vehicle.py
 
 This should open a stage with a blue ground-plane with an 3DR Iris vehicle model in it. The simulation should start playing automatically and the stage being rendered. 
 The vehicle will automatically start flying and performing a very fast relay maneuvre. If you miss it, you can just hit the stop/play

@@ -1,6 +1,6 @@
 [package]
 # Semantic Versioning is used: https://semver.org/
-version = "4.5.0"
+version = "5.1.0"
 
 # Lists people or organizations that are considered the "authors" of the package.
 authors = ["Marcelo Jacinto"]
@@ -39,7 +39,7 @@ icon = "data/icon.png"
 "omni.kit.uiapp" = {}
 "omni.isaac.core" = {}
 "omni.ui.scene" = {}
-"omni.kit.window.viewport" = {}
+"omni.kit.capture.viewport" = {}
 "isaacsim.replicator.agent.core" = {}
 
 # Main python module this extension provides, it will be publicly available as "import pegasus.simulator".

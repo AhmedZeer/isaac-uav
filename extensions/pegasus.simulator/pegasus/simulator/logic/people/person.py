@@ -15,6 +15,7 @@ from pxr import Sdf
 # High level Isaac sim APIs
 import NavSchema
 import omni.client
+from isaacsim.core.utils import prims
 from omni.usd import get_stage_next_free_path
 from isaacsim.storage.native import get_assets_root_path
 
@@ -23,7 +24,6 @@ import omni.anim.graph.core as ag
 import isaacsim.replicator.agent.core
 from isaacsim.replicator.agent.core.settings import PrimPaths
 from isaacsim.replicator.agent.core.stage_util import CharacterUtil
-from isaacsim.replicator.agent.core.simulation import SimulationManager
 
 # Extension APIs
 from pegasus.simulator.logic.state import State
@@ -37,7 +37,7 @@ class Person:
     """
 
     # Get root assets path from setting, if not set, get the Isaac-Sim asset path
-    people_asset_folder = "http://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/4.2/Isaac/People/Characters/"
+    people_asset_folder = "https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/People/Characters/"
     character_root_prim_path = PrimPaths.characters_parent_path()
 
     assets_root_path = None   
@@ -72,9 +72,6 @@ class Person:
         self._world = PegasusInterface().world
         self._current_stage = self._world.stage
 
-        # Load the simulation manager
-        self.sim_manager = SimulationManager()
-
         # Variable that will hold the current state of the vehicle
         self._state = State()
         self._state.position = np.array(init_pos)
@@ -97,6 +94,9 @@ class Person:
 
         # Spawn the agent in the world
         self.spawn_agent(self.char_usd_file, self._stage_prefix, init_pos, init_yaw)
+
+        # Characters assets path:
+        # https://omniverse-content-production.s3-us-west-2.amazonaws.com/Assets/Isaac/5.1/Isaac/People/Characters/
 
         # Add the animation graph to the agent, such that it can move around
         self.character_graph = None
@@ -261,21 +261,23 @@ class Person:
         # Update the navigation mesh to include the character skeleton root prim
         omni.kit.commands.execute("ApplyNavMeshAPICommand", prim_path=stage_name, api=NavSchema.NavMeshExcludeAPI)
 
-    def add_animation_graph_to_agent(self):
-        
-        # Load the character skeleton and animations (if not loaded yet)
-        self.sim_manager.load_default_skeleton_and_animations()
+        # If the base biped character is not present in the stage, spawn it
+        if not self._current_stage.GetPrimAtPath(Person.character_root_prim_path + "/Biped_Setup"):
+            prim = prims.create_prim(Person.character_root_prim_path + "/Biped_Setup", "Xform", usd_path=Person.assets_root_path + "/Biped_Setup.usd")
+            prim.GetAttribute("visibility").Set("invisible")
 
-        # The part bellow is based on "setup_animation_graph_to_character" from the replicator SimulationManager class
-        default_biped_prim = PrimPaths.biped_prim_path()
-        anim_graph_prim = CharacterUtil.get_anim_graph_from_character(self._current_stage.GetPrimAtPath(default_biped_prim))
-        self.sim_manager.setup_animation_graph_to_character([self.character_skel_root])
+
+    def add_animation_graph_to_agent(self):
+
+        # Get the animation graph that we are going to add to the person
+        animation_graph = self._current_stage.GetPrimAtPath(Person.character_root_prim_path + "/Biped_Setup/CharacterAnimation/AnimationGraph")
 
         # Remove the animation graph attribute if it exists
         omni.kit.commands.execute("RemoveAnimationGraphAPICommand", paths=[Sdf.Path(self.character_skel_root.GetPrimPath())])
 
         # Add the animation graph to the character
-        omni.kit.commands.execute("ApplyAnimationGraphAPICommand", paths=[Sdf.Path(self.character_skel_root.GetPrimPath())], animation_graph_path=Sdf.Path(anim_graph_prim.GetPrimPath()))
+        omni.kit.commands.execute("ApplyAnimationGraphAPICommand", paths=[Sdf.Path(self.character_skel_root.GetPrimPath())], animation_graph_path=Sdf.Path(animation_graph.GetPrimPath()))
+
 
     @staticmethod
     def _transverse_prim(stage, stage_prefix):

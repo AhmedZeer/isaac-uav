@@ -39,11 +39,11 @@ do it `here <https://docs.qgroundcontrol.com/master/en/getting_started/download_
 1. Simulation Steps
 -------------------
 
-1. Open ``ISAACSIM``, either by using the Omniverse Launcher or the terminal command:
+1. Open ``ISAACSIM``, either by using the terminal command:
 
     .. code:: bash
 
-        ISAACSIM
+        isaac_run
 
 2. Make sure the Pegasus Simulator Extension is enabled.
 

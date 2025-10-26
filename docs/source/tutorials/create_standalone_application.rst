@@ -79,7 +79,7 @@ Now let's run the Python script:
 
 .. code:: bash
 
-   ISAACSIM_PYTHON examples/0_template_app.py
+   isaac_run examples/0_template_app.py
 
 This should open a stage with a blue ground-plane. The simulation should start playing automatically and the stage being rendered. 
 To stop the simulation, you can either ``close the window``, press the ``STOP button`` in the UI, or press ``Ctrl+C`` in the terminal.

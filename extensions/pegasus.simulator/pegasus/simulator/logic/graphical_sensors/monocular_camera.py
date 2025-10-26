@@ -10,7 +10,7 @@ from pegasus.simulator.logic.state import State
 from pegasus.simulator.logic.graphical_sensors import GraphicalSensor
 from pegasus.simulator.logic.interface.pegasus_interface import PegasusInterface
 
-from omni.isaac.sensor import Camera
+from isaacsim.sensors.camera.camera import Camera
 from omni.usd import get_stage_next_free_path
 
 # Auxiliary scipy and numpy modules
@@ -42,7 +42,7 @@ class MonocularCamera(GraphicalSensor):
             >>> "resolution": (1920, 1200),
             >>> "frequency": 30,
             >>> "intrinsics": np.array([[958.8, 0.0, 957.8], [0.0, 956.7, 589.5], [0.0, 0.0, 1.0]]),
-            >>> "distortion_coefficients": np.array([0.14, -0.03, -0.0002, -0.00003, 0.009, 0.5, -0.07, 0.017]),
+            >>> "distortion_coefficients": [0.14, -0.03, -0.0002, -0.00003, 0.009, 0.5, -0.07, 0.017]),
             >>> "diagonal_fov": 140.0}
         """
 
@@ -60,7 +60,7 @@ class MonocularCamera(GraphicalSensor):
         self._resolution = config.get("resolution", (1920, 1200))
         self._frequency = config.get("frequency", 30)
         self._intrinsics = config.get("intrinsics", np.array([[958.8, 0.0, 957.8], [0.0, 956.7, 589.5], [0.0, 0.0, 1.0]]))
-        self._distortion_coefficients = config.get("distortion_coefficients", np.array([0.14, -0.03, -0.0002, -0.00003, 0.009, 0.5, -0.07, 0.017]))
+        self._distortion_coefficients = config.get("distortion_coefficients",[0.14, -0.03, -0.0002, -0.00003, 0.009, 0.5, -0.07, 0.017])
         self._diagonal_fov = config.get("diagonal_fov", 140.0)
 
         # Setup an empty camera output dictionary
@@ -99,10 +99,9 @@ class MonocularCamera(GraphicalSensor):
         self._camera.initialize()
 
         # Set the correct properties of the camera (this must be done after the camera object is initialized)
-        #self._camera.set_projection_type("pinhole")
-        #self._camera.set_projection_type("fisheyePolynomial")  # # f-theta model, to approximate the fisheye model
-        #self._camera.set_rational_polynomial_properties(self._resolution[0], self._resolution[1], cx, cy, self._diagonal_fov, self._distortion_coefficients)
-        #self._camera.set_clipping_range(0.05, 100.0)
+        self._camera.set_lens_distortion_model("OmniLensDistortionOpenCvPinholeAPI")
+        self._camera.set_rational_polynomial_properties(nominal_width=self._resolution[0], nominal_height=self._resolution[1], optical_centre_x=cx, optical_centre_y=cy, max_fov=self._diagonal_fov, distortion_model=self._distortion_coefficients)
+        self._camera.set_clipping_range(0.05, 100.0)
 
         # Check if depth is enabled, if so, set the depth properties
         if self._depth:
@@ -158,7 +157,7 @@ class MonocularCamera(GraphicalSensor):
             #if self._depth:
             #    self._state["depth"] = self._camera.get_depth()
 
-            if self._camera.get_projection_type() == "pinhole":
+            if self._camera.get_lens_distortion_model() == "pinhole":
                 self._state["intrinsics"] = self._camera.get_intrinsics_matrix()
             
         # If something goes wrong during the data acquisition, just return None

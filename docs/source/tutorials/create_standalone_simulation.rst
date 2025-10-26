@@ -109,7 +109,7 @@ Now let's run the Python script:
 
 .. code:: bash
 
-   ISAACSIM_PYTHON examples/1_px4_single_vehicle.py
+   isaac_run examples/1_px4_single_vehicle.py
 
 This should open a stage with a blue ground-plane with an 3DR Iris vehicle model in it. The simulation should start playing automatically and the stage being rendered. 
 PX4-Autopilot will start running automatically in the background, receiving data from the simulated sensors and sending

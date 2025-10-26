@@ -4,9 +4,9 @@ Installation
 Installing NVIDIA Isaac Sim
 ---------------------------
 
-.. image:: https://img.shields.io/badge/IsaacSim-4.5.0-brightgreen.svg
+.. image:: https://img.shields.io/badge/IsaacSim-5.1.0-brightgreen.svg
    :target: https://developer.nvidia.com/isaac-sim
-   :alt: IsaacSim 4.5.0
+   :alt: IsaacSim 5.1.0
 
 .. image:: https://img.shields.io/badge/PX4--Autopilot-1.14.3-brightgreen.svg
    :target: https://github.com/PX4/PX4-Autopilot
@@ -17,9 +17,9 @@ Installing NVIDIA Isaac Sim
    :alt: Ubuntu 22.04
 
 .. note::
-	We have tested Pegasus Simulator with Isaac Sim 4.5.0 release on Ubuntu 22.04LTS with NVIDIA driver 550.163.01. The PX4-Autopilot used during development was v.14.3. Older versions Ubuntu and PX4-Autopilot were not tested. This extension was not tested on Windows. 
+	We have tested Pegasus Simulator with Isaac Sim 5.1.0 release on Ubuntu 22.04LTS with NVIDIA driver 550.163.01. The PX4-Autopilot used during development was v.14.3. Older versions Ubuntu and PX4-Autopilot were not tested. This extension was not tested on Windows. 
 
-In order to install Isaac Sim on linux, download the zip file containing the `Workstation Installation here <https://download.isaacsim.omniverse.nvidia.com/isaac-sim-standalone%404.5.0-rc.36%2Brelease.19112.f59b3005.gl.linux-x86_64.release.zip>`__ or run the following lines on the terminal:
+In order to install Isaac Sim on linux, download the zip file containing the `Workstation Installation here <https://download.isaacsim.omniverse.nvidia.com/isaac-sim-standalone-5.1.0-linux-x86_64.zip>`__ or run the following lines on the terminal:
 
 .. code:: bash
 
@@ -31,20 +31,20 @@ In order to install Isaac Sim on linux, download the zip file containing the `Wo
     cd isaacsim
 
     # Download the zip file containing the Isaac Sim installation
-    wget https://download.isaacsim.omniverse.nvidia.com/isaac-sim-standalone%404.5.0-rc.36%2Brelease.19112.f59b3005.gl.linux-x86_64.release.zip
+    wget https://download.isaacsim.omniverse.nvidia.com/isaac-sim-standalone-5.1.0-linux-x86_64.zip
 
     # Unzip the file
-    unzip isaac-sim-standalone%404.5.0-rc.36%2Brelease.19112.f59b3005.gl.linux-x86_64.release.zip
+    unzip isaac-sim-standalone-5.1.0-linux-x86_64.zip
 
     # Run the post-installation scripts
     ./post_install.sh
     ./isaac-sim.selector.sh
 
     # Delete the zip file
-    rm isaac-sim-standalone%404.5.0-rc.36%2Brelease.19112.f59b3005.gl.linux-x86_64.release.zip
+    rm isaac-sim-standalone-5.1.0-linux-x86_64.zip
 
 
-The short video with the installation guide for Pegasus Simulator is also available `here <https://youtu.be/YCp5E8nazag>`__, but the Isaac Sim install method presented is no longer available. You should follow the instructions above to install Isaac Sim 4.5.0. **See video from 1:25 min onwards for the installation of Pegasus Simulator.**
+The short video with the installation guide for Pegasus Simulator is also available `here <https://youtu.be/YCp5E8nazag>`__, but the Isaac Sim install method presented is no longer available. You should follow the instructions above to install Isaac Sim 5.1.0. **See video from 1:25 min onwards for the installation of Pegasus Simulator.**
 
     ..  youtube:: YCp5E8nazag
         :width: 100%
@@ -61,7 +61,7 @@ from python scripts. As such, we recommend setting up a few custom environment v
 
 .. note::
     Although it is possible to setup a virtual environment following the 
-    instructions `here <https://docs.isaacsim.omniverse.nvidia.com/4.5.0/installation/install_python.html>`__, this
+    instructions `here <https://docs.isaacsim.omniverse.nvidia.com/5.1.0/installation/install_python.html>`__, this
     feature was not tested.
 
 Start by locating the **Isaac Sim installation** by navigating to Isaac Sim's root folder. Typically, in Linux, this folder can be found under ``${HOME}/isaac_sim``.
@@ -70,12 +70,96 @@ Add the following lines to your ``~/.bashrc`` or ``~/.zshrc`` file.
 
 .. code:: bash
 
-   # Isaac Sim root directory
-   export ISAACSIM_PATH="${HOME}/isaacsim"
-   # Isaac Sim python executable
-   alias ISAACSIM_PYTHON="${ISAACSIM_PATH}/python.sh"
-   # Isaac Sim app
-   alias ISAACSIM="${ISAACSIM_PATH}/isaac-sim.sh"
+    # ---------------------------
+    # ISAAC SIM SETUP
+    # ---------------------------
+    # Isaac Sim root directory
+    export ISAACSIM_PATH="${HOME}/isaacsim"
+    # Isaac Sim python executable
+    export ISAACSIM_PYTHON="${ISAACSIM_PATH}/python.sh"
+    # Isaac Sim app
+    export ISAACSIM="${ISAACSIM_PATH}/isaac-sim.sh"
+
+    # Define an auxiliary function to launch Isaac Sim or run scripts with Isaac Sim's python
+    # This is done to avoid conflicts between ROS 2 and Isaac Sim's Python environment
+    isaac_run() {
+
+        # ------------------
+        # === VALIDATION ===
+        # ------------------
+        if [ ! -x "$ISAACSIM_PYTHON" ]; then
+            echo "❌ IsaacSim python.sh not found at: $ISAACSIM_PYTHON"
+            return 1
+        fi
+        if [ ! -x "$ISAACSIM" ]; then
+            echo "❌ IsaacSim launcher not found at: $ISAACSIM"
+            return 1
+        fi
+
+        # -------------------------
+        # === CLEAN ENVIRONMENT ===
+        # -------------------------
+        # Unset ROS 2 environment variables to avoid conflicts with Isaac's Python 3.11
+        unset ROS_VERSION ROS_PYTHON_VERSION ROS_DISTRO AMENT_PREFIX_PATH COLCON_PREFIX_PATH PYTHONPATH CMAKE_PREFIX_PATH
+        
+        # Remove ROS 2 paths from LD_LIBRARY_PATH if present
+        local ros_paths=("/opt/ros/humble" "/opt/ros/jazzy" "/opt/ros/iron")
+        for ros_path in "${ros_paths[@]}"; do
+            export LD_LIBRARY_PATH=$(echo "$LD_LIBRARY_PATH" | tr ':' '\n' | grep -v "^${ros_path}" | paste -sd':' -)
+        done
+
+        # -----------------------------
+        # === UBUNTU VERSION CHECK ===
+        # -----------------------------
+
+        if [ -f /etc/os-release ]; then
+            UBUNTU_VERSION=$(grep "^VERSION_ID=" /etc/os-release | cut -d'"' -f2)
+        fi
+
+        # If Ubuntu 24.04 -> use the Isaac Sim internal ROS2 Jazzy (ROS2 Jazzy bridge)
+        if [[ "$UBUNTU_VERSION" == "24.04" ]]; then
+            export ROS_DISTRO=jazzy
+            export RMW_IMPLEMENTATION=rmw_fastrtps_cpp
+            export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${ISAACSIM_PATH}/exts/isaacsim.ros2.bridge/jazzy/lib"
+            echo "🧩 Detected Ubuntu 24.04 -> Using ROS_DISTRO=jazzy"
+        # If Ubuntu 22.04 -> use the Isaac Sim internal ROS2 Humble (ROS2 Humble bridge)
+        else
+            export ROS_DISTRO=humble
+            export RMW_IMPLEMENTATION=rmw_fastrtps_cpp
+            export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${ISAACSIM_PATH}/exts/isaacsim.ros2.bridge/humble/lib"
+            echo "🧩 Detected Ubuntu ${UBUNTU_VERSION:-unknown} -> Using ROS_DISTRO=humble"
+        fi
+
+        # ---------------------
+        # === RUN ISAAC SIM ===
+        # ---------------------
+        if [ $# -eq 0 ]; then
+            # No args → Launch full Isaac Sim GUI
+            echo "🧠 Launching Isaac Sim GUI..."
+            "${ISAACSIM}"
+
+        elif [[ "$1" == --* ]]; then
+            # Arguments start with "--" → pass them to Isaac Sim executable
+            echo "⚙️  Launching Isaac Sim with options: $*"
+            "${ISAACSIM}" "$@"
+
+        elif [ -f "$1" ]; then
+            # First argument is a Python file → run with Isaac Sim's Python
+            local SCRIPT_PATH="$1"
+            shift
+            echo "🚀 Running Python script with Isaac Sim: $SCRIPT_PATH"
+            "${ISAACSIM_PYTHON}" "$SCRIPT_PATH" "$@"
+
+        else
+            # Unrecognized input
+            echo "❌ Unknown argument or file not found: '$1'"
+            echo "Usage:"
+            echo "  isaac_run                 → launch GUI"
+            echo "  isaac_run my_script.py    → run script with IsaacSim Python"
+            echo "  isaac_run --headless ...  → launch IsaacSim with CLI flags"
+            return 1
+        fi
+    }
 
 In the remaining of the documentation, we will refer to the Isaac Sim's path as ``ISAACSIM_PATH`` ,
 the provided python interpreter as ``ISAACSIM_PYTHON`` and the simulator itself as ``ISAACSIM`` .
@@ -91,10 +175,10 @@ open a new terminal window (**Ctrl+Alt+T**), and test the following commands:
     .. code:: bash
 
         # Run the simulator with the --help argument to see all available options
-        ISAACSIM --help
+        isaac_run --help
 
         # Run the simulator. A new window should open
-        ISAACSIM
+        isaac_run
 
 - Check that you can launch the simulator from a python script (standalone mode)
 

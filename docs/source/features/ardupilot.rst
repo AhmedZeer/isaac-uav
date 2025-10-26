@@ -1,9 +1,9 @@
 ArduPilot (Experimental)
 ========================
 
-.. image:: https://img.shields.io/badge/IsaacSim-4.2.0-brightgreen.svg
+.. image:: https://img.shields.io/badge/IsaacSim-4.5.0-brightgreen.svg
    :target: https://developer.nvidia.com/isaac-sim
-   :alt: IsaacSim 4.2.0
+   :alt: IsaacSim 4.5.0
 
 .. image:: https://img.shields.io/badge/ArduPilot--Copter-4.4.0-brightgreen.svg
    :target: https://github.com/ArduPilot/ardupilot
