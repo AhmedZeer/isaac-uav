@@ -233,7 +233,7 @@ class PX4MavlinkBackendConfig(BackendConfig):
 
         # The update rate at which we will be sending data to mavlink (TODO - remove this from here in the future
         # and infer directly from the function calls)
-        self.update_rate: float = self.config.get("update_rate", 250.0)  # [Hz]
+        self.update_rate: float = self.config.get("update_rate", 400.0)  # [Hz]
 
 
 class PX4MavlinkBackend(Backend):

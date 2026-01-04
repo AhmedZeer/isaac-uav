@@ -270,7 +270,7 @@ class ArduPilotMavlinkBackendConfig(BackendConfig):
 
         # The update rate at which we will be sending data to mavlink (TODO - remove this from here in the future
         # and infer directly from the function calls)
-        self.update_rate: float = config.get("update_rate", 400)  # [Hz]
+        self.update_rate: float = config.get("update_rate", 250)  # [Hz]
 
         carb.log_warn(
             f"[ArduPilotMavlinkBackendConfig] Initialized with vehicle_id={self.vehicle_id}, connection_type={self.connection_type}, connection_ip={self.connection_ip}, connection_baseport={self.connection_baseport}, ardupilot_autolaunch={self.ardupilot_autolaunch}, ardupilot_dir={self.ardupilot_dir}, ardupilot_vehicle_model={self.ardupilot_vehicle_model}, enable_lockstep={self.enable_lockstep}, num_rotors={self.num_rotors}, input_offset={self.input_offset}, input_scaling={self.input_scaling}, zero_position_armed={self.zero_position_armed}, update_rate={self.update_rate}"

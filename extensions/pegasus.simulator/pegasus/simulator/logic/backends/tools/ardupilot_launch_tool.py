@@ -58,36 +58,44 @@ class ArduPilotLaunchTool:
     
     def launch_ardupilot(self):
         """
-        Method that will launch a ardupilot instance with the specified configuration
+        Method that will launch an ardupilot instance with a cleaned environment
         """
-        # sim_vehicle.py -v ArduCopter -f gazebo-iris --mode JSON --console --map
         command = [
             "python3", f"{self.ardupilot_dir}/Tools/autotest/sim_vehicle.py",
             "-v", "ArduCopter",
             "-f", f"{self._get_vehicle_frame()}",
             "--model", f"{self.model}",
             f"{'--no-rebuild' if self._sitl_already_exists() else ''}",
-            f"--console",
-            f"--map",
+            "--console",
+            "--map",
             "-I", f"{self.vehicle_id}",
             "--sysid", f"{self.vehicle_id + 1}",
             "--out", f"udp:127.0.0.1:{14550 + self.vehicle_id * 10}",
+            # "--cmd", "param set ARMING_CHECK 0"
         ]
-        command: str = " ".join(command)
+        command_str = " ".join(command)
         
-        # Run in a seperate bash window
+        # --- FIX STARTS HERE ---
+        # Create a copy of the current environment
+        clean_env = self.environment.copy()
+        
+        # Remove the Isaac Sim variables that cause the SRE module mismatch
+        clean_env.pop("PYTHONPATH", None)
+        clean_env.pop("LD_LIBRARY_PATH", None)
+        # --- FIX ENDS HERE ---
+        
+        # Run in a separate bash window using the cleaned environment
         self.ardupilot_process = subprocess.Popen(
-            # ["gnome-terminal", '--disable-factory', '--', 'bash', '-c', command],
-            ["gnome-terminal", '--', 'bash', '-c', command],
+            ["gnome-terminal", '--', 'bash', '-c', command_str],
             cwd=self.root_fs.name,
             shell=False,
-            env=self.environment,
+            env=clean_env, # Use the clean version instead of self.environment
             preexec_fn=os.setsid
         )
 
     def kill_ardupilot(self):
         """
-        Method that will kill a ardupilot instance with the specified configuration
+        Method that will kill a ardupilot instance param set ARMING_CHECK 0with the specified configuration
         """
         if self.ardupilot_process is not None:
             os.killpg(self.ardupilot_process.pid, signal.SIGINT)
