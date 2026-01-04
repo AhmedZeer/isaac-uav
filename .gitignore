@@ -2,6 +2,7 @@
 _build/
 .DS_Store
 **/.vscode/ipch
+*.swp
 
 # C++
 **/cmake-build*/
